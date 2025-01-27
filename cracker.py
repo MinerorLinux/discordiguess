@@ -42,6 +42,7 @@ def load_json(file_path, default):
     return default
 
 mod_logs = load_json(MOD_LOGS_FILE, defaultdict(list))
+support_chat_status = defaultdict(lambda: True)  # Initialize with True to allow chat by default
 recent_actions = load_json(RECENT_ACTIONS_FILE, defaultdict(lambda: defaultdict(deque)))
 user_timezones = load_json(USER_TIMEZONES_FILE, defaultdict(lambda: 'UTC'))
 bypass_users = set(load_json(BYPASS_USERS_FILE, []))
@@ -49,7 +50,7 @@ bypass_users = set(load_json(BYPASS_USERS_FILE, []))
 # Save data to JSON files
 def save_json(file_path, data):
     with open(file_path, "w") as file:
-        json.dump(data, file, default=str)
+        json.dump(data, file, default=str, indent=4)
 
 SUPPORT_SERVER_ID = 1094926261459111936
 SUPPORT_INVITE_LINK = "https://discord.gg/uNwvyTCeJv"
@@ -115,7 +116,7 @@ async def info(ctx: lightbulb.Context) -> None:
             color=hikari.Color(0xFFD700)
         )
         embed.add_field(name="Author", value="fentbusgaming", inline=True)
-        embed.add_field(name="Version", value="1.2.3-233    ", inline=True)
+        embed.add_field(name="Version", value="1.2.3-233", inline=True)
         await ctx.respond(embed=embed)
     except Exception as e:
         await ctx.respond("An error occurred while processing your request.")
