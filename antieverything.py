@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands
 import datetime
 import json
-import asyncio
 import os
 from collections import defaultdict, deque
 
@@ -20,7 +19,7 @@ SETTINGS_FILE = os.path.join(DATA_FOLDER, "settings.json")
 # Store whitelist and settings
 class Config:
     def __init__(self):
-        self.whitelist = self.load_json(WHITELIST_FILE, set())
+        self.whitelist = set(self.load_json(WHITELIST_FILE, []))
         self.settings = self.load_json(SETTINGS_FILE, {
             "anti_channel_create": True,
             "anti_channel_delete": True,
@@ -28,7 +27,8 @@ class Config:
             "anti_role_delete": True,
             "anti_ban": True,
             "anti_kick": True,
-            "punishment": "ban",  # can be "ban" or "kick"
+            "punishment": "timeout",  # can be "timeout" or "kick"
+            "timeout_duration": 600,  # duration in seconds
             "anti_invite_links": True,
             "anti_mass_messages": True,
             "mass_message_threshold": 5,
@@ -43,7 +43,7 @@ class Config:
 
     def save_json(self, file_path, data):
         with open(file_path, "w") as file:
-            json.dump(data, file, default=str)
+            json.dump(data, file, default=str, indent=4)
 
     def save(self):
         self.save_json(WHITELIST_FILE, list(self.whitelist))
@@ -64,7 +64,14 @@ async def whitelist(ctx, member: discord.Member):
     """Whitelist a user from anti-nuke checks"""
     config.whitelist.add(member.id)
     config.save()
-    await ctx.send(f"{member.name} has been whitelisted.")
+    embed = discord.Embed(
+        title="Whitelist",
+        description=f"{member.mention} has been whitelisted.",
+        color=discord.Color.green()
+    )
+    embed.set_thumbnail(url=member.avatar.url)
+    embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+    await ctx.send(embed=embed)
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -72,7 +79,14 @@ async def unwhitelist(ctx, member: discord.Member):
     """Remove a user from whitelist"""
     config.whitelist.discard(member.id)
     config.save()
-    await ctx.send(f"{member.name} has been removed from whitelist.")
+    embed = discord.Embed(
+        title="Unwhitelist",
+        description=f"{member.mention} has been removed from the whitelist.",
+        color=discord.Color.red()
+    )
+    embed.set_thumbnail(url=member.avatar.url)
+    embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+    await ctx.send(embed=embed)
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -80,20 +94,37 @@ async def viewwhitelist(ctx):
     """View the current whitelist"""
     if config.whitelist:
         members = [f"<@{member_id}>" for member_id in config.whitelist]
-        await ctx.send("Whitelisted members:\n" + "\n".join(members))
+        embed = discord.Embed(
+            title="Whitelisted Members",
+            description="\n".join(members),
+            color=discord.Color.blue()
+        )
     else:
-        await ctx.send("The whitelist is currently empty.")
+        embed = discord.Embed(
+            title="Whitelisted Members",
+            description="The whitelist is currently empty.",
+            color=discord.Color.blue()
+        )
+    embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+    await ctx.send(embed=embed)
 
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def viewsettings(ctx):
     """View the current anti-nuke settings"""
     settings = "\n".join([f"{key}: {value}" for key, value in config.settings.items()])
-    await ctx.send(f"Current settings:\n{settings}")
+    embed = discord.Embed(
+        title="Current Settings",
+        description=settings,
+        color=discord.Color.blue()
+    )
+    embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+    await ctx.send(embed=embed)
 
 async def handle_punishment(guild: discord.Guild, member: discord.Member):
-    if config.settings["punishment"] == "ban":
-        await guild.ban(member, reason="Anti-nuke: Suspicious activity")
+    if config.settings["punishment"] == "timeout":
+        duration = config.settings["timeout_duration"]
+        await member.timeout_for(datetime.timedelta(seconds=duration), reason="Anti-nuke: Suspicious activity")
     else:
         await guild.kick(member, reason="Anti-nuke: Suspicious activity")
 
@@ -144,7 +175,13 @@ async def on_message(message):
     # Anti-invite links
     if config.settings["anti_invite_links"] and "discord.gg/" in message.content:
         await message.delete()
-        await message.channel.send(f"{message.author.mention}, invite links are not allowed.")
+        embed = discord.Embed(
+            title="Invite Link Detected",
+            description=f"{message.author.mention}, invite links are not allowed.",
+            color=discord.Color.red()
+        )
+        embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+        await message.channel.send(embed=embed)
         return
 
     # Anti-mass messages
@@ -155,7 +192,13 @@ async def on_message(message):
         if len(recent_messages[message.author.id]) == config.settings["mass_message_threshold"]:
             first_message_time = recent_messages[message.author.id][0]
             if (now - first_message_time).total_seconds() < config.settings["mass_message_timeframe"]:
-                await message.channel.send(f"{message.author.mention}, you are sending messages too quickly.")
+                embed = discord.Embed(
+                    title="Mass Messaging Detected",
+                    description=f"{message.author.mention}, you are sending messages too quickly.",
+                    color=discord.Color.red()
+                )
+                embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+                await message.channel.send(embed=embed)
                 await handle_punishment(message.guild, message.author)
                 recent_messages[message.author.id].clear()
 
@@ -181,15 +224,47 @@ async def antinuke(ctx, setting: str, value: str):
             elif setting == "mass_messages":
                 config.settings["anti_mass_messages"] = (value == "on")
             config.save()
-            await ctx.send(f"Anti-{setting} has been turned {value}")
+            embed = discord.Embed(
+                title="Anti-Nuke Setting Updated",
+                description=f"Anti-{setting} has been turned {value}.",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+            await ctx.send(embed=embed)
     elif setting == "punishment":
-        if value in ["ban", "kick"]:
+        if value in ["timeout", "kick"]:
             config.settings["punishment"] = value
             config.save()
-            await ctx.send(f"Punishment has been set to {value}")
+            embed = discord.Embed(
+                title="Punishment Setting Updated",
+                description=f"Punishment has been set to {value}.",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+            await ctx.send(embed=embed)
+    elif setting == "timeout_duration":
+        try:
+            duration = int(value)
+            config.settings["timeout_duration"] = duration
+            config.save()
+            embed = discord.Embed(
+                title="Timeout Duration Updated",
+                description=f"Timeout duration has been set to {duration} seconds.",
+                color=discord.Color.green()
+            )
+            embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+            await ctx.send(embed=embed)
+        except ValueError:
+            embed = discord.Embed(
+                title="Invalid Duration",
+                description="Please provide a valid number for timeout duration.",
+                color=discord.Color.red()
+            )
+            embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
+            await ctx.send(embed=embed)
 
-@bot.command()
-async def help(ctx):
+@bot.command(name="help")
+async def bothelp(ctx):
     """Displays the help message"""
     embed = discord.Embed(
         title="Help",
@@ -202,7 +277,7 @@ async def help(ctx):
     embed.add_field(name="!viewsettings", value="View the current anti-nuke settings", inline=False)
     embed.add_field(name="!antinuke <setting> <value>", value="Configure anti-nuke settings", inline=False)
     embed.add_field(name="!help", value="Displays this help message", inline=False)
-    embed.set_footer(text="AntiEverything Bot")
+    embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
     await ctx.send(embed=embed)
 
 # Replace 'YOUR_TOKEN' with your bot's token
