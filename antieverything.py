@@ -6,6 +6,7 @@ import os
 from collections import defaultdict, deque
 
 intents = discord.Intents.all()
+
 bot = commands.Bot(command_prefix='!', intents=intents)
 
 # Create a folder for storing JSON files
@@ -49,14 +50,17 @@ class Config:
         self.save_json(WHITELIST_FILE, list(self.whitelist))
         self.save_json(SETTINGS_FILE, self.settings)
 
+
 config = Config()
 
 # Dictionary to track recent messages for anti-mass messaging
 recent_messages = defaultdict(lambda: deque(maxlen=config.settings["mass_message_threshold"]))
 
+
 @bot.event
 async def on_ready():
     print(f'Bot is ready as {bot.user}')
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -73,6 +77,7 @@ async def whitelist(ctx, member: discord.Member):
     embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
     await ctx.send(embed=embed)
 
+
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def unwhitelist(ctx, member: discord.Member):
@@ -87,6 +92,7 @@ async def unwhitelist(ctx, member: discord.Member):
     embed.set_thumbnail(url=member.avatar.url)
     embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
     await ctx.send(embed=embed)
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -108,6 +114,7 @@ async def viewwhitelist(ctx):
     embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
     await ctx.send(embed=embed)
 
+
 @bot.command()
 @commands.has_permissions(administrator=True)
 async def viewsettings(ctx):
@@ -121,12 +128,14 @@ async def viewsettings(ctx):
     embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
     await ctx.send(embed=embed)
 
+
 async def handle_punishment(guild: discord.Guild, member: discord.Member):
     if config.settings["punishment"] == "timeout":
         duration = config.settings["timeout_duration"]
         await member.timeout_for(datetime.timedelta(seconds=duration), reason="Anti-nuke: Suspicious activity")
     else:
         await guild.kick(member, reason="Anti-nuke: Suspicious activity")
+
 
 @bot.event
 async def on_guild_channel_create(channel):
@@ -135,11 +144,13 @@ async def on_guild_channel_create(channel):
             await channel.delete()
             await handle_punishment(channel.guild, entry.user)
 
+
 @bot.event
 async def on_guild_channel_delete(channel):
     async for entry in channel.guild.audit_logs(limit=1, action=discord.AuditLogAction.channel_delete):
         if entry.user.id not in config.whitelist and config.settings["anti_channel_delete"]:
             await handle_punishment(channel.guild, entry.user)
+
 
 @bot.event
 async def on_guild_role_create(role):
@@ -148,11 +159,13 @@ async def on_guild_role_create(role):
             await role.delete()
             await handle_punishment(role.guild, entry.user)
 
+
 @bot.event
 async def on_guild_role_delete(role):
     async for entry in role.guild.audit_logs(limit=1, action=discord.AuditLogAction.role_delete):
         if entry.user.id not in config.whitelist and config.settings["anti_role_delete"]:
             await handle_punishment(role.guild, entry.user)
+
 
 @bot.event
 async def on_member_ban(guild, user):
@@ -161,11 +174,13 @@ async def on_member_ban(guild, user):
             await guild.unban(user)
             await handle_punishment(guild, entry.user)
 
+
 @bot.event
 async def on_member_remove(member):
     async for entry in member.guild.audit_logs(limit=1, action=discord.AuditLogAction.kick):
         if entry.user.id not in config.whitelist and config.settings["anti_kick"]:
             await handle_punishment(member.guild, entry.user)
+
 
 @bot.event
 async def on_message(message):
@@ -201,6 +216,7 @@ async def on_message(message):
                 await message.channel.send(embed=embed)
                 await handle_punishment(message.guild, message.author)
                 recent_messages[message.author.id].clear()
+
 
 @bot.command()
 @commands.has_permissions(administrator=True)
@@ -262,6 +278,7 @@ async def antinuke(ctx, setting: str, value: str):
             )
             embed.set_footer(text="AntiEverything Bot", icon_url=bot.user.avatar.url)
             await ctx.send(embed=embed)
+
 
 @bot.command(name="help")
 async def bothelp(ctx):
