@@ -1,0 +1,4 @@
+hikari
+lightbulb
+python-dotenv
+Pillow
