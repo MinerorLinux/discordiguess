@@ -228,21 +228,20 @@ async def antinuke(ctx, setting: str, value: str):
     """Configure anti-nuke settings"""
     setting = setting.lower()
     value = value.lower()
-    
-    if setting in ["channels", "roles", "bans", "kicks", "invite_links", "mass_messages"]:
+
+    valid_settings = {
+        "channels": ["anti_channel_create", "anti_channel_delete"],
+        "roles": ["anti_role_create", "anti_role_delete"],
+        "bans": ["anti_ban"],
+        "kicks": ["anti_kick"],
+        "invite_links": ["anti_invite_links"],
+        "mass_messages": ["anti_mass_messages"]
+    }
+
+    if setting in valid_settings:
         if value in ["on", "off"]:
-            if setting == "channels":
-                config.settings["anti_channel_create"] = config.settings["anti_channel_delete"] = (value == "on")
-            elif setting == "roles":
-                config.settings["anti_role_create"] = config.settings["anti_role_delete"] = (value == "on")
-            elif setting == "bans":
-                config.settings["anti_ban"] = (value == "on")
-            elif setting == "kicks":
-                config.settings["anti_kick"] = (value == "on")
-            elif setting == "invite_links":
-                config.settings["anti_invite_links"] = (value == "on")
-            elif setting == "mass_messages":
-                config.settings["anti_mass_messages"] = (value == "on")
+            for key in valid_settings[setting]:
+                config.settings[key] = (value == "on")
             config.save()
             embed = discord.Embed(
                 title="Anti-Nuke Setting Updated",
