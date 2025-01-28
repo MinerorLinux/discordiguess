@@ -4,6 +4,10 @@ import datetime
 import json
 import os
 from collections import defaultdict, deque
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 
 intents = discord.Intents.all()
 
@@ -59,7 +63,7 @@ recent_messages = defaultdict(lambda: deque(maxlen=config.settings["mass_message
 
 @bot.event
 async def on_ready():
-    print(f'Bot is ready as {bot.user}')
+    logging.info(f'Bot is ready as {bot.user}')
 
 
 @bot.command()
@@ -298,4 +302,4 @@ async def bothelp(ctx):
     await ctx.send(embed=embed)
 
 # Replace 'YOUR_TOKEN' with your bot's token
-bot.run('YOUR_TOKEN')
+bot.run(os.getenv('YOUR_TOKEN'))

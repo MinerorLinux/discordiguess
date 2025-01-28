@@ -7,7 +7,6 @@ import os
 import logging
 import json
 from dotenv import load_dotenv
-from typing import DefaultDict, Deque
 from PIL import Image, ImageDraw, ImageFont
 import io
 
@@ -356,4 +355,4 @@ async def on_member_delete(event: hikari.MemberDeleteEvent) -> None:
     except Exception as e:
         logging.error(f"Error in on_member_delete event: {e}")
 
-bot.run()  # Run the bot with the provided token and prefix
+bot.run()
