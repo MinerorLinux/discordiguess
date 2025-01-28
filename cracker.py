@@ -41,7 +41,6 @@ def load_json(file_path, default):
             return json.load(file)
     return default
 
-
 mod_logs = load_json(MOD_LOGS_FILE, defaultdict(list))
 support_chat_status = defaultdict(lambda: True)  # Initialize with True to allow chat by default
 recent_actions = load_json(RECENT_ACTIONS_FILE, defaultdict(lambda: defaultdict(deque)))
@@ -53,11 +52,9 @@ def save_json(file_path, data):
     with open(file_path, "w") as file:
         json.dump(data, file, default=str, indent=4)
 
-
 SUPPORT_SERVER_ID = 1094926261459111936
 SUPPORT_INVITE_LINK = "https://discord.gg/uNwvyTCeJv"
 STATUS_VOICE_CHANNEL_ID = 1333341675573219328  # voice channel ID
-
 
 @bot.listen(hikari.StartedEvent)
 async def on_started(event: hikari.StartedEvent) -> None:
@@ -69,7 +66,6 @@ async def on_started(event: hikari.StartedEvent) -> None:
     except Exception as e:
         logging.error(f"Error updating status channel: {e}")
 
-
 @bot.listen(hikari.StoppedEvent)
 async def on_stopped(event: hikari.StoppedEvent) -> None:
     logging.info('Bot has stopped!')
@@ -80,7 +76,6 @@ async def on_stopped(event: hikari.StoppedEvent) -> None:
             await bot.rest.edit_channel(channel, name="🔴 Bot Status: Offline")
     except Exception as e:
         logging.error(f"Error updating status channel: {e}")
-
 
 @bot.command
 @lightbulb.command('restart', 'Restarts the bot.')
@@ -98,7 +93,6 @@ async def restart(ctx: lightbulb.Context) -> None:
         await ctx.respond("An error occurred while processing your request.")
         logging.error(f"Error in restart command: {e}")
 
-
 @bot.listen(lightbulb.CommandErrorEvent)
 async def on_command_error(event: lightbulb.CommandErrorEvent) -> None:
     if isinstance(event.exception, lightbulb.CommandInvocationError):
@@ -110,7 +104,6 @@ async def on_command_error(event: lightbulb.CommandErrorEvent) -> None:
     else:
         await event.context.respond("An unexpected error occurred.")
     logging.error(f"Error in command {event.context.command.name}: {event.exception}")
-
 
 @bot.command
 @lightbulb.command('info', 'Provides information about the bot.')
@@ -128,7 +121,6 @@ async def info(ctx: lightbulb.Context) -> None:
     except Exception as e:
         await ctx.respond("An error occurred while processing your request.")
         logging.error(f"Error in info command: {e}")
-
 
 @bot.command
 @lightbulb.command('commands', 'Lists all available commands.')
@@ -157,7 +149,6 @@ async def commands(ctx: lightbulb.Context) -> None:
         await ctx.respond("An error occurred while processing your request.")
         logging.error(f"Error in commands command: {e}")
 
-
 @bot.command
 @lightbulb.command('support', 'Provides the support server invite link.')
 @lightbulb.implements(lightbulb.PrefixCommand, lightbulb.SlashCommand)
@@ -167,7 +158,6 @@ async def support(ctx: lightbulb.Context) -> None:
     except Exception as e:
         await ctx.respond("An error occurred while processing your request.")
         logging.error(f"Error in support command: {e}")
-
 
 @bot.command
 @lightbulb.option("user", "The user to add or remove from the bypass list.", hikari.User)
@@ -187,7 +177,6 @@ async def bypass(ctx: lightbulb.Context) -> None:
         bypass_users.discard(user.id)
         await ctx.respond(f"{user.username} has been removed from the bypass list.")
     save_json(BYPASS_USERS_FILE, list(bypass_users))
-
 
 @bot.command
 @lightbulb.option("text_color", "The color of the text in hex format (e.g., #FFFFFF for white).", str, required=False, default="#FFFFFF")
@@ -217,7 +206,6 @@ async def generateimage(ctx: lightbulb.Context) -> None:
         await ctx.respond("An error occurred while generating the image.")
         logging.error(f"Error in generateimage command: {e}")
 
-
 @bot.command
 @lightbulb.option("image", "Upload an image to create a GIF.", hikari.Attachment, required=True)
 @lightbulb.command('gif', 'Creates a GIF from an uploaded image.')
@@ -236,7 +224,6 @@ async def gif(ctx: lightbulb.Context) -> None:
     except Exception as e:
         await ctx.respond("An error occurred while creating the GIF.")
         logging.error(f"Error in gif command: {e}")
-
 
 @bot.listen(hikari.GuildMessageCreateEvent)
 async def on_message_create(event: hikari.GuildMessageCreateEvent) -> None:
@@ -258,7 +245,6 @@ async def on_message_create(event: hikari.GuildMessageCreateEvent) -> None:
             save_json(MOD_LOGS_FILE, mod_logs)
     except Exception as e:
         logging.error(f"Error in on_message_create event: {e}")
-
 
 @bot.listen(hikari.GuildMessageDeleteEvent)
 async def on_message_delete(event: hikari.GuildMessageDeleteEvent) -> None:
@@ -282,7 +268,6 @@ async def on_message_delete(event: hikari.GuildMessageDeleteEvent) -> None:
     except Exception as e:
         logging.error(f"Error in on_message_delete event: {e}")
 
-
 @bot.listen(hikari.GuildChannelCreateEvent)
 async def on_channel_create(event: hikari.GuildChannelCreateEvent) -> None:
     try:
@@ -304,7 +289,6 @@ async def on_channel_create(event: hikari.GuildChannelCreateEvent) -> None:
             save_json(RECENT_ACTIONS_FILE, recent_actions)
     except Exception as e:
         logging.error(f"Error in on_channel_create event: {e}")
-
 
 @bot.listen(hikari.RoleCreateEvent)
 async def on_role_create(event: hikari.RoleCreateEvent) -> None:
@@ -328,7 +312,6 @@ async def on_role_create(event: hikari.RoleCreateEvent) -> None:
     except Exception as e:
         logging.error(f"Error in on_role_create event: {e}")
 
-
 @bot.listen(hikari.RoleDeleteEvent)
 async def on_role_delete(event: hikari.RoleDeleteEvent) -> None:
     try:
@@ -350,7 +333,6 @@ async def on_role_delete(event: hikari.RoleDeleteEvent) -> None:
             save_json(RECENT_ACTIONS_FILE, recent_actions)
     except Exception as e:
         logging.error(f"Error in on_role_delete event: {e}")
-
 
 @bot.listen(hikari.MemberDeleteEvent)
 async def on_member_delete(event: hikari.MemberDeleteEvent) -> None:
@@ -374,5 +356,4 @@ async def on_member_delete(event: hikari.MemberDeleteEvent) -> None:
     except Exception as e:
         logging.error(f"Error in on_member_delete event: {e}")
 
-
-bot.run()
+bot.run()  # Run the bot with the provided token and prefix
