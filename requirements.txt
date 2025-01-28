@@ -1,4 +1,4 @@
 hikari
-lightbulb
+hikari-lightbulb
 python-dotenv
 Pillow
